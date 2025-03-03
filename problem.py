@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-problem_title = 'MAP estimation from non-invasive monitoring'
+problem_title = 'stress estimation'
 
 # A type (class) which will be used to create wrapper objects for y_pred
 Predictions = rw.prediction_types.make_regression()
@@ -77,8 +77,8 @@ def get_train_data(path='.', start=None, stop=None, load_waveform=True):
 
     rw.HASH_TRAIN = hash_train
 
-    train_file = Path(path) / "data" / 'train.h5'
-    val_file = Path(path) / "data" / 'validation.h5'
+    train_file = Path(path) / "data" / 'train.csv'
+    val_file = Path(path) / "data" / 'validation.csv'
     if os.environ.get("RAMP_TEST_MODE", False):
         start_s, stop_s = 0, 1000
         start_t, stop_t = -1001, -1
@@ -106,7 +106,7 @@ def get_test_data(path='.', start=None, stop=None, load_waveform=True):
 
     rw.HASH_TEST = hash_test
 
-    file = 'test.h5'
+    file = 'test.csv'
     file = Path(path) / "data" / file
     if os.environ.get("RAMP_TEST_MODE", False):
         start, stop = 0, 100
