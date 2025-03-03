@@ -1,0 +1,16 @@
+name: ramp-map-estimation
+channels:
+  - conda-forge
+dependencies:
+  - joblib
+  - matplotlib
+  - numpy
+  - pandas
+  - scikit-learn>=1.4
+  - pytables
+  - h5py
+  - pip
+  - pip:
+    - ramp-workflow
+    - osfclient
+    - physiocurve

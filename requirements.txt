@@ -1,0 +1,9 @@
+ramp-workflow
+numpy
+pandas
+matplotlib
+scikit-learn
+physiocurve
+h5py
+tables
+osfclient
