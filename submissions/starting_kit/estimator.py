@@ -1,24 +1,29 @@
-from sklearn.pipeline import make_pipeline
-from sklearn.compose import make_column_transformer
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.base import BaseEstimator
+from sklearn.pipeline import make_pipeline, Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
 
-class IgnoreDomain(RandomForestRegressor):
+class Classifier(BaseEstimator):
+    def __init__(self):
+        self.transformer = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+            ]
+        )
+        self.model = LogisticRegression(max_iter=500)
+        self.pipe = make_pipeline(self.transformer, self.model)
+
     def fit(self, X, y):
-        # Ignore the samples with missing target
-        X = X[y != -1]
-        y = y[y != -1]
-        return super().fit(X, y)
+        X = X.drop(["groups"], axis=1)
+        self.pipe.fit(X, y)
 
+    def predict(self, X):
+        X = X.drop(["groups"], axis=1)
+        return self.pipe.predict(X)
 
-def get_estimator():
-    return make_pipeline(
-        make_column_transformer(
-            ("passthrough", ["age"]),
-            (OrdinalEncoder(
-                handle_unknown='use_encoded_value', unknown_value=-1
-            ), ["gender"]),
-        ),
-        IgnoreDomain(n_estimators=50)
-    )
+    def predict_proba(self, X):
+        X = X.drop(["groups"], axis=1)
+        return self.pipe.predict_proba(X)
