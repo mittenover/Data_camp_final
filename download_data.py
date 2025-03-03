@@ -12,7 +12,7 @@ from pathlib import Path
 from osfclient.api import OSF
 from osfclient.exceptions import UnauthorizedException
 
-CHALLENGE_NAME = 'map_estimation'
+CHALLENGE_NAME = 'stress_estimation'
 PUBLIC_PROJECT = "t4uf8"
 PRIVATE_PROJECT = "g5t7q"
 PRIVATE_CKSUM = 2716027363
