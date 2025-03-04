@@ -36,52 +36,47 @@ score_types = [
     rw.score_types.Accuracy(name='acc', precision=3)
 ]
 
-def _get_data(path=".", split="train", cat_to_int = cat_to_int):
-    # Load data from csv files into pd.DataFrame
+def _load_data(file, start=None, stop=None, load_waveform=True):
+    if start is not None and stop is not None:
+        nrows = stop - start
+        X_df = pd.read_csv(file, skiprows=range(1, start + 1), nrows=nrows)
+    else:
+        X_df = pd.read_csv(file)
 
-    data_df = pd.read_csv(os.path.join(path, "data", split + ".csv"))
+    y = X_df['Stress_Level']
+    X_df = X_df.drop(columns=['Stress_Level_Biosensor', 'Stress_Level_Self_Report'], errors='ignore')
 
-    data_df["cuisine1"] = data_df["cuisine1"].astype("category")
-    data_df["cuisine2"] = data_df["cuisine2"].astype("category")
+    # Replace None value in y by `-1
+    y = y.fillna(-1).values
 
-    # usefull columns
-    subset = [
-        "Student_ID",
-        "Age",
-        "Gender",
-        "Heart_Rate",
-        "Blood_Pressure_Systolic",
-        "Blood_Pressure_Diastolic",
-        # "Stress_Level_Biosensor",
-        # "Stress_Level_Self_Report",
-        "Physical_Activity",
-        "Sleep_Quality",
-        "Mood",
-        "Study_Hours",
-        "Project_Hours",
-        "Health_Risk_Level"
-    ]
+    return X_df, y
 
-    X = data_df[subset]
+def get_train_data(path='.', start=None, stop=None, load_waveform=True):
+    hash_train = hash((str(path), start, stop, load_waveform))
+    if getattr(rw, "HASH_TRAIN", -1) == hash_train:
+        return rw.X_TRAIN, rw.Y_TRAIN
 
-    # labels
-    y = np.array(data_df["Stress_Level"].map(cat_to_int).fillna(-1).astype("int8"))
+    rw.HASH_TRAIN = hash_train
 
-    return X, y
+    train_file = Path(path) / 'student_health_data_preprocessed.csv'
+    X_train, y_train = _load_data(train_file, start, stop, load_waveform)
 
-groups = None
+    rw.X_TRAIN, rw.Y_TRAIN = X_train, y_train
+    return X_train, y_train
 
-def get_train_data(path="."):
-    data = pd.read_csv(os.path.join(path, "data", "train.csv"))
-    data["name"] = data["name"].astype("category")
-    Name = np.array(data["name"].cat.codes)
-    global groups
-    groups = Name
-    return _get_data(path, "train")
+def get_test_data(path='.', start=None, stop=None, load_waveform=True):
+    hash_test = hash((str(path), start, stop, load_waveform))
+    if getattr(rw, "HASH_TEST", -1) == hash_test:
+        return rw.X_TRAIN, rw.Y_TRAIN
 
+    rw.HASH_TEST = hash_test
 
-def get_test_data(path="."):
-    return _get_data(path, "test")
+    file = 'student_health_data_preprocessed.csv'
+    file = Path(path) / file
+    if os.environ.get("RAMP_TEST_MODE", False):
+        start, stop = 0, 100
+    rw.X_TEST, rw.Y_TEST = _load_data(file, start, stop, load_waveform)
+    return rw.X_TEST, rw.Y_TEST
 
 def get_cv(X, y):
     cv = StratifiedGroupKFold(n_splits=2, shuffle=True, random_state=2)
