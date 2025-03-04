@@ -1,21 +1,18 @@
 import rampwf as rw
-
 import os
-import csv
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit
 
-problem_title = 'Stress estimation'
+problem_title = 'Stress_estimation'
 
 # Mapping int to categories
 int_to_cat = {
-   1 : 'NOT VERY STRESSED',
-   2 : 'STRESSED',
-   3 : 'VERY STRESSED',
-   4 : 'HIGHLY STRESSED'
+   1 : 'Low Stress',
+   2 : 'Moderate Stress',
+   3 : 'High Perceived Stress'
 }
 
 _event_label_int = list(int_to_cat)
@@ -41,14 +38,16 @@ def _load_data(file, start=None, stop=None, load_waveform=True):
     else:
         X_df = pd.read_csv(file)
 
-    y = np.array(X_df["Stress_Category"].map(cat_to_int).fillna(-1).astype("int8"))
-    
-    X_df = X_df.drop(columns=['Stress_Level_Biosensor', 'Stress_Level_Self_Report', 'Stress_Category'], errors='ignore')
+    y = X_df['Stress_Category'].map(cat_to_int)    # Convert categories to int
+    X_df = X_df.drop(columns=['Stress_Category', 'PSS_score'], errors='ignore') # Drop the target columns from the features
+
+    # Replace None value in y by `-1
+    y = y.fillna(-1).values
 
     return X_df, y
 
 def get_split(path='.'):
-    file = Path(path) / 'student_health_data_preprocessed.csv'
+    file = Path(path) / 'data/stress-detection-dataset/preprocessed_stress_detection.csv'
     X, y = _load_data(file)
     lines = len(X)
     start_first_lines = 0
@@ -65,7 +64,7 @@ def get_train_data(path='.'):
 
     rw.HASH_TRAIN = hash_train
 
-    train_file = Path(path) / 'student_health_data_preprocessed.csv'
+    train_file = Path(path) / 'data/stress-detection-dataset/preprocessed_stress_detection.csv'
 
     start_first_lines, end_first_lines, start_other_lines, end_other_lines = get_split(path)
     X_train, y_train = _load_data(train_file, start=start_first_lines, stop=end_first_lines)
@@ -80,14 +79,16 @@ def get_test_data(path='.'):
 
     rw.HASH_TEST = hash_test
 
-    file = 'student_health_data_preprocessed.csv'
+    file = 'data/stress-detection-dataset/preprocessed_stress_detection.csv'
     file = Path(path) / file
 
     start_first_lines, end_first_lines, start_other_lines, end_other_lines = get_split(path)
     
     if os.environ.get("RAMP_TEST_MODE", False):
         start, stop = 0, 100
-    rw.X_TEST, rw.Y_TEST = _load_data(file, start=start_other_lines, stop=end_other_lines)
+    else:
+        start, stop = start_other_lines, end_other_lines
+    rw.X_TEST, rw.Y_TEST = _load_data(file, start=start, stop=stop)
     return rw.X_TEST, rw.Y_TEST
 
 ## Personalized Cross Validation
