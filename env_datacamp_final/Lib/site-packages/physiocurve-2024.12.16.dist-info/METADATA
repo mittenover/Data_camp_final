@@ -1,0 +1,23 @@
+Metadata-Version: 2.1
+Name: physiocurve
+Version: 2024.12.16
+Summary: Analyse biometric time series
+Home-page: https://framagit.org/jaj/physiocurve
+License: ISC
+Author: Jona Joachim
+Author-email: jona@joachim.cc
+Requires-Python: >=3.10,<4
+Classifier: License :: OSI Approved
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Requires-Dist: neurokit2 (>=0.2.10,<0.3.0)
+Requires-Dist: pandas (>=2,<3)
+Project-URL: Repository, https://framagit.org/jaj/physiocurve
+Description-Content-Type: text/markdown
+
+# physiocurve
+physiocurve is a library to analyze biometric time series such as ECG and pulse waves, often obtained from patient monitors.
+

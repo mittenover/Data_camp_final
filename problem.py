@@ -75,7 +75,7 @@ def get_train_data(path='.'):
 def get_test_data(path='.'):
     hash_test = hash((str(path)))
     if getattr(rw, "HASH_TEST", -1) == hash_test:
-        return rw.X_TRAIN, rw.Y_TRAIN
+        return rw.X_TEST, rw.Y_TEST ## changement car erreur dans le template (X_TRAIN et Y_TRAIN)
 
     rw.HASH_TEST = hash_test
 
