@@ -10,9 +10,9 @@ problem_title = 'Stress_estimation'
 
 # Mapping int to categories
 int_to_cat = {
-   1 : 'Low Stress',
-   2 : 'Moderate Stress',
-   3 : 'High Perceived Stress'
+   0 : 'Low Stress',
+   1 : 'Moderate Stress',
+   2 : 'High Perceived Stress'
 }
 
 _event_label_int = list(int_to_cat)
@@ -70,7 +70,7 @@ def get_train_data(path='.'):
     X_train, y_train = _load_data(train_file, start=start_first_lines, stop=end_first_lines)
 
     rw.X_TRAIN, rw.Y_TRAIN = X_train, y_train
-    return X_train, y_train
+    return X_train.to_numpy(), y_train
 
 def get_test_data(path='.'):
     hash_test = hash((str(path)))
@@ -89,7 +89,7 @@ def get_test_data(path='.'):
     else:
         start, stop = start_other_lines, end_other_lines
     rw.X_TEST, rw.Y_TEST = _load_data(file, start=start, stop=stop)
-    return rw.X_TEST, rw.Y_TEST
+    return rw.X_TEST.to_numpy(), rw.Y_TEST
 
 ## Personalized Cross Validation
 # to use it : problem.get_cv(X_train, y_train)
