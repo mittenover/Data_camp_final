@@ -1,4 +1,4 @@
-name: ramp-map-estimation
+name: ramp-stress-estimation
 channels:
   - conda-forge
 dependencies:
