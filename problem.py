@@ -1,21 +1,18 @@
 import rampwf as rw
-
 import os
-import h5py
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
+from sklearn.model_selection import StratifiedShuffleSplit
 
-
-problem_title = 'stress estimation'
+problem_title = 'Stress_estimation'
 
 # Mapping int to categories
 int_to_cat = {
-   1 : 'NOT VERY STRESSED',
-   2 : 'STRESSED',
-   3 : 'VERY STRESSED',
-   4 : 'HIGHLY STRESSED'
+   0 : 'Low Stress',
+   1 : 'Moderate Stress',
+   2 : 'High Perceived Stress'
 }
 
 _event_label_int = list(int_to_cat)
@@ -30,59 +27,72 @@ workflow = rw.workflows.Classifier()
 # Mapping categories to int
 cat_to_int = {v: k for k, v in int_to_cat.items()}
 
-# Define the score (specific to the competition)
 score_types = [
     rw.score_types.BalancedAccuracy(name='bal_acc', precision=3, adjusted=False),
     rw.score_types.Accuracy(name='acc', precision=3)
 ]
+def _load_data(file, start=None, stop=None, load_waveform=True):
+    if start is not None and stop is not None:
+        nrows = stop - start
+        X_df = pd.read_csv(file, skiprows=range(1, start + 1), nrows=nrows)
+    else:
+        X_df = pd.read_csv(file)
 
-def _get_data(path=".", split="train", cat_to_int = cat_to_int):
-    # Load data from csv files into pd.DataFrame
+    y = X_df['Stress_Category'].map(cat_to_int)    # Convert categories to int
+    X_df = X_df.drop(columns=['Stress_Category', 'PSS_score'], errors='ignore') # Drop the target columns from the features
 
-    data_df = pd.read_csv(os.path.join(path, "data", split + ".csv"))
+    # Replace None value in y by `-1
+    y = y.fillna(-1).values
 
-    data_df["cuisine1"] = data_df["cuisine1"].astype("category")
-    data_df["cuisine2"] = data_df["cuisine2"].astype("category")
+    return X_df, y
 
-    # usefull columns
-    subset = [
-        "Student_ID",
-        "Age",
-        "Gender",
-        "Heart_Rate",
-        "Blood_Pressure_Systolic",
-        "Blood_Pressure_Diastolic",
-        # "Stress_Level_Biosensor",
-        # "Stress_Level_Self_Report",
-        "Physical_Activity",
-        "Sleep_Quality",
-        "Mood",
-        "Study_Hours",
-        "Project_Hours",
-        "Health_Risk_Level"
-    ]
+def get_split(path='.'):
+    file = Path(path) / 'data/stress-detection-dataset/preprocessed_stress_detection.csv'
+    X, y = _load_data(file)
+    lines = len(X)
+    start_first_lines = 0
+    end_first_lines = int(lines * 0.8)-1
+    start_other_lines = end_first_lines
+    end_other_lines = lines
 
-    X = data_df[subset]
+    return start_first_lines, end_first_lines, start_other_lines, end_other_lines
 
-    # labels
-    y = np.array(data_df["Stress_Level"].map(cat_to_int).fillna(-1).astype("int8"))
+def get_train_data(path='.'):
+    hash_train = hash((str(path)))
+    if getattr(rw, "HASH_TRAIN", -1) == hash_train:
+        return rw.X_TRAIN, rw.Y_TRAIN
 
-    return X, y
+    rw.HASH_TRAIN = hash_train
 
-groups = None
+    train_file = Path(path) / 'data/stress-detection-dataset/preprocessed_stress_detection.csv'
 
-def get_train_data(path="."):
-    data = pd.read_csv(os.path.join(path, "data", "train.csv"))
-    data["name"] = data["name"].astype("category")
-    Name = np.array(data["name"].cat.codes)
-    global groups
-    groups = Name
-    return _get_data(path, "train")
+    start_first_lines, end_first_lines, start_other_lines, end_other_lines = get_split(path)
+    X_train, y_train = _load_data(train_file, start=start_first_lines, stop=end_first_lines)
 
+    rw.X_TRAIN, rw.Y_TRAIN = X_train, y_train
+    return X_train.to_numpy(), y_train
 
-def get_test_data(path="."):
-    return _get_data(path, "test")
+def get_test_data(path='.'):
+    hash_test = hash((str(path)))
+    if getattr(rw, "HASH_TEST", -1) == hash_test:
+        return rw.X_TRAIN, rw.Y_TRAIN
 
+    rw.HASH_TEST = hash_test
+
+    file = 'data/stress-detection-dataset/preprocessed_stress_detection.csv'
+    file = Path(path) / file
+
+    start_first_lines, end_first_lines, start_other_lines, end_other_lines = get_split(path)
+    
+    if os.environ.get("RAMP_TEST_MODE", False):
+        start, stop = 0, 100
+    else:
+        start, stop = start_other_lines, end_other_lines
+    rw.X_TEST, rw.Y_TEST = _load_data(file, start=start, stop=stop)
+    return rw.X_TEST.to_numpy(), rw.Y_TEST
+
+## Personalized Cross Validation
+# to use it : problem.get_cv(X_train, y_train)
 def get_cv(X, y):
-    cv = StratifiedGroupKFold(n_splits=2, shuffle=True, random_state=2)
-    return cv.split(X, y, groups)
+    cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=57)
+    return cv.split(X, y)
