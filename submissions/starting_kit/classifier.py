@@ -1,7 +1,8 @@
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier               ## Not working XGBoost, need to use a sklearn model
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class Classifier(BaseEstimator):
@@ -17,10 +18,14 @@ class Classifier(BaseEstimator):
             ('imputer', SimpleImputer(strategy='median')),
             ('scaler', StandardScaler())
         ])
-        self.model = XGBClassifier(
-            objective='multi:softprob', 
-            eval_metric='mlogloss', 
-            use_label_encoder=False,
+        ## Not working XGBoost, need to use a sklearn model
+        # self.model = XGBClassifier(
+        #     objective='multi:softprob', 
+        #     eval_metric='mlogloss', 
+        #     use_label_encoder=False,
+        #     random_state=42
+        # )
+        self.model = GradientBoostingClassifier(
             random_state=42
         )
         self.pipeline = Pipeline(steps=[
