@@ -26,6 +26,9 @@ class Classifier(BaseEstimator):
         #     random_state=42
         # )
         self.model = GradientBoostingClassifier(
+            n_estimators=200,
+            max_depth=3,
+            subsample=0.8,
             random_state=42
         )
         self.pipeline = Pipeline(steps=[
